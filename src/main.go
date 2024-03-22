@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+    "bufio"
 	"image"
 	"image/color"
 	"image/png"
@@ -24,28 +25,15 @@ func main() {
         fmt.Fprintln(os.Stderr, "Failed to open file");
         panic(err);
     }
+    reader := bufio.NewReader(file);
 
-    a, err := file.Stat();
-    if err != nil {
-        panic(err);
-    }
-    data := make([]byte, a.Size());
-    file.Read(data);    // TODO, DON'T READ WHOLE FILE TO MEMORY, IT WON'T WORK ON LARGE FILES
-    file.Close();
-
-    ar := make([][]float32, 256);
-    for i := 0; i < 256; i++ {
-        ar[i]= make([]float32, 256);
-    }
+    var ar [256][256]float32;
 
     // for every two bytes in file, use first on as X and second one as Y.
-    t := 1;
     for {
-        if t > int(a.Size())-1 { break; }
-        x := data[t-1];
-        y := data[t];
+        x, err := reader.ReadByte(); if err != nil { break; }
+        y, err := reader.ReadByte(); if err != nil { break; }
         ar[x][y] += 1.0;
-        t += 2;
     }
 
 
@@ -79,6 +67,7 @@ func main() {
         }
     }
 
+    file.Close();
     file, err = os.Create("out.png");
     if err != nil {
         panic(err);
