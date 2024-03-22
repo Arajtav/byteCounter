@@ -9,8 +9,13 @@ import (
 )
 
 func main() {
-    if len(os.Args) != 2 {
-        fmt.Fprintln(os.Stderr, "Wrong argument count");
+    if len(os.Args) < 2 {
+        fmt.Fprintln(os.Stderr, "You need to specify input file");
+        os.Exit(1);
+    }
+
+    if len(os.Args) > 2 {
+        fmt.Fprintln(os.Stderr, "Too many arguments");
         os.Exit(1);
     }
 
@@ -25,7 +30,7 @@ func main() {
         panic(err);
     }
     data := make([]byte, a.Size());
-    file.Read(data);
+    file.Read(data);    // TODO, DON'T READ WHOLE FILE TO MEMORY, IT WON'T WORK ON LARGE FILES
     file.Close();
 
     ar := make([][]float32, 256);
@@ -33,6 +38,7 @@ func main() {
         ar[i]= make([]float32, 256);
     }
 
+    // for every two bytes in file, use first on as X and second one as Y.
     t := 1;
     for {
         if t > int(a.Size())-1 { break; }
@@ -42,6 +48,7 @@ func main() {
         t += 2;
     }
 
+    // find max value
     mx := float32(0.0);
     for i := 0; i < 256; i++ {
         for j := 0; j < 256; j++ {
@@ -49,6 +56,7 @@ func main() {
         }
     }
 
+    // normalize, make every value from 0 to 255
     for i := 0; i < 256; i++ {
         for j := 0; j < 256; j++ {
             ar[i][j] = (ar[i][j]/mx) * 255;
