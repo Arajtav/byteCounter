@@ -27,7 +27,7 @@ func main() {
     }
     reader := bufio.NewReader(file);
 
-    var ar [256][256]float32;
+    var ar [256][256]float64;
 
     // for every two bytes in file, use first on as X and second one as Y.
     for {
@@ -38,8 +38,8 @@ func main() {
 
 
     // find max value and min value
-    mx := float32(0.0);
-    mi := float32(3.40282346638528859811704183484516925440000000000000e+38);    // float32 max
+    mx := float64(0.0);
+    mi := float64(1.79769313486231570814527423731704356798070e+308);    // float64 max
     for i := 0; i < 256; i++ {
         for j := 0; j < 256; j++ {
             if ar[i][j] > mx { mx = ar[i][j]; }
