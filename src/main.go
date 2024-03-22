@@ -48,18 +48,26 @@ func main() {
         t += 2;
     }
 
-    // find max value
+
+    // find max value and min value
     mx := float32(0.0);
+    mi := float32(3.40282346638528859811704183484516925440000000000000e+38);    // float32 max
     for i := 0; i < 256; i++ {
         for j := 0; j < 256; j++ {
             if ar[i][j] > mx { mx = ar[i][j]; }
+            if ar[i][j] < mi { mi = ar[i][j]; }
         }
     }
 
     // normalize, make every value from 0 to 255
+    mx -= mi;
+    if mx == 0.0 {
+        fmt.Fprintln(os.Stderr, "This shouldn't happen TODO");
+        os.Exit(1);
+    }
     for i := 0; i < 256; i++ {
         for j := 0; j < 256; j++ {
-            ar[i][j] = (ar[i][j]/mx) * 255;
+            ar[i][j] = ((ar[i][j]-mi)/mx) * 255;
         }
     }
 
