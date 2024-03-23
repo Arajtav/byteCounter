@@ -13,6 +13,7 @@ import (
 func main() {
     bn      := flag.Bool("bn", false, "if set to true, program will make contrast higher but subtracting minimal value from everything");
     debug   := flag.Bool("debug", false, "print debug information");
+    igf     := flag.Bool("igf", false, "if this flag is set to true, program will ignore most occurring byte sequence");
     flag.Parse();
 
     if len(flag.Args()) < 1 {
@@ -52,6 +53,16 @@ func main() {
         for j := 0; j < 256; j++ {
             if ar[i][j] > mx { mx = ar[i][j]; mxv.X = uint8(i); mxv.Y = uint8(j);}
             if ar[i][j] < mi { mi = ar[i][j]; }
+        }
+    }
+
+    if *igf {
+        ar[mxv.X][mxv.Y] = 0.0;
+        mx = float64(0.0);
+        for i := 0; i < 256; i++ {
+            for j := 0; j < 256; j++ {
+                if ar[i][j] > mx { mx = ar[i][j]; }
+            }
         }
     }
 
