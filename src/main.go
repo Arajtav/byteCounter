@@ -1,17 +1,18 @@
 package main
 
 import (
-	"fmt"
-    "flag"
+    "os"
     "bufio"
-	"image"
-	"image/color"
-	"image/png"
-	"os"
+    "fmt"
+    "flag"
+    "image"
+    "image/color"
+    "image/png"
 )
 
 func main() {
-    bn := flag.Bool("bn", false, "if set to true, program will make contrast higher but subtracting minimal value from everything");
+    bn      := flag.Bool("bn", false, "if set to true, program will make contrast higher but subtracting minimal value from everything");
+    debug   := flag.Bool("debug", false, "print debug information");
     flag.Parse();
 
     if len(flag.Args()) < 1 {
@@ -31,6 +32,8 @@ func main() {
     }
     reader := bufio.NewReader(file);
 
+    if *debug { fmt.Printf("reader size: %d\n", reader.Size()); }
+
     var ar [256][256]float64;
 
     // for every two bytes in file, use first on as X and second one as Y.
@@ -43,13 +46,16 @@ func main() {
 
     // find max value and min value
     mx := float64(0.0);
+    var mxv struct{X, Y uint8};
     mi := float64(1.79769313486231570814527423731704356798070e+308);    // float64 max
     for i := 0; i < 256; i++ {
         for j := 0; j < 256; j++ {
-            if ar[i][j] > mx { mx = ar[i][j]; }
+            if ar[i][j] > mx { mx = ar[i][j]; mxv.X = uint8(i); mxv.Y = uint8(j);}
             if ar[i][j] < mi { mi = ar[i][j]; }
         }
     }
+
+    if *debug { fmt.Printf("max: %f\nmin: %f\nmxv: %02x %02x\n", mx, mi, mxv.X, mxv.Y); }
 
     // normalize, make every value from 0 to 255
     if *bn {
