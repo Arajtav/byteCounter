@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+    "flag"
     "bufio"
 	"image"
 	"image/color"
@@ -10,17 +11,20 @@ import (
 )
 
 func main() {
-    if len(os.Args) < 2 {
+    bn := flag.Bool("bn", false, "if set to true, program will make contrast higher but subtracting minimal value from everything");
+    flag.Parse();
+
+    if len(flag.Args()) < 1 {
         fmt.Fprintln(os.Stderr, "You need to specify input file");
         os.Exit(1);
     }
 
-    if len(os.Args) > 2 {
+    if len(flag.Args()) > 1 {
         fmt.Fprintln(os.Stderr, "Too many arguments");
         os.Exit(1);
     }
 
-    file, err := os.Open(os.Args[1]);
+    file, err := os.Open(flag.Args()[0]);
     if err != nil {
         fmt.Fprintln(os.Stderr, "Failed to open file");
         panic(err);
@@ -48,14 +52,21 @@ func main() {
     }
 
     // normalize, make every value from 0 to 255
-    mx -= mi;
-    if mx == 0.0 {
-        fmt.Fprintln(os.Stderr, "This shouldn't happen TODO");
-        os.Exit(1);
+    if *bn {
+        mx -= mi;
+        if mx == 0.0 {
+            fmt.Fprintln(os.Stderr, "This shouldn't happen TODO");
+            os.Exit(1);
+        }
     }
+
     for i := 0; i < 256; i++ {
         for j := 0; j < 256; j++ {
-            ar[i][j] = ((ar[i][j]-mi)/mx) * 255;
+            if *bn {
+                ar[i][j] = ((ar[i][j]-mi)/mx) * 255;
+            } else {
+                ar[i][j] = (ar[i][j]/mx)*255;
+            }
         }
     }
 
