@@ -68,21 +68,21 @@ func main() {
 
     if *debug { fmt.Printf("max: %f\nmin: %f\nmxv: %02x %02x\n", mx, mi, mxv.X, mxv.Y); }
 
-    // normalize, make every value from 0 to 255
+    // normalization so everything will be from 0 to 255
+    mx /= 255;  // one operation instead multiplying by 255 in loop
     if *bn {
-        mx -= mi;
-        if mx == 0.0 {
-            fmt.Fprintln(os.Stderr, "This shouldn't happen TODO");
-            os.Exit(1);
-        }
-    }
+        mx -= mi/255;
+        if mx == 0.0 { mx = 127; }
 
-    for i := 0; i < 256; i++ {
-        for j := 0; j < 256; j++ {
-            if *bn {
-                ar[i][j] = ((ar[i][j]-mi)/mx) * 255;
-            } else {
-                ar[i][j] = (ar[i][j]/mx)*255;
+        for i := 0; i < 256; i++ {
+            for j := 0; j < 256; j++ {
+                ar[i][j] = ((ar[i][j]-mi)/mx);
+            }
+        }
+    } else {
+        for i := 0; i < 256; i++ {
+            for j := 0; j < 256; j++ {
+                ar[i][j] = (ar[i][j]/mx);
             }
         }
     }
