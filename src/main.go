@@ -95,6 +95,10 @@ func main() {
         }
     }
 
+    if *igf {
+        img.Set(int(mxv.X), int(mxv.Y), color.RGBA{255, 0, 255, 255});
+    }
+
     file.Close();
     file, err = os.Create("out.png");
     if err != nil {
