@@ -3,17 +3,20 @@ package main
 import (
     "os"
     "bufio"
+
     "fmt"
+
     "flag"
+
     "image"
     "image/color"
     "image/png"
 )
 
 func main() {
-    bn      := flag.Bool("bn", false, "if set to true, program will make contrast higher but subtracting minimal value from everything");
-    debug   := flag.Bool("debug", false, "print debug information");
-    igf     := flag.Bool("igf", false, "if this flag is set to true, program will ignore most occurring byte sequence");
+    flagBn      := flag.Bool("bn",      false, "If set to true, program will make contrast higher by subtracting minimal value from everything");
+    flagDebug   := flag.Bool("debug",   false, "Prints debug information");
+    flagIgf     := flag.Bool("igf",     false, "Makes program ignore most occurring byte sequence when normalizing data. It will also replace pixel at that place to magenta");
     flag.Parse();
 
     if len(flag.Args()) < 1 {
@@ -33,7 +36,7 @@ func main() {
     }
     reader := bufio.NewReader(file);
 
-    if *debug { fmt.Printf("reader size: %d\n", reader.Size()); }
+    if *flagDebug { fmt.Printf("reader size: %d\n", reader.Size()); }
 
     var ar [256][256]float64;
 
@@ -43,7 +46,7 @@ func main() {
         y, err := reader.ReadByte(); if err != nil { break; }
         ar[x][y] += 1.0;
     }
-
+    file.Close();
 
     // find max value and min value
     mx := float64(0.0);
@@ -56,7 +59,7 @@ func main() {
         }
     }
 
-    if *igf {
+    if *flagIgf {
         ar[mxv.X][mxv.Y] = 0.0;
         mx = float64(0.0);
         for i := 0; i < 256; i++ {
@@ -66,11 +69,11 @@ func main() {
         }
     }
 
-    if *debug { fmt.Printf("max: %f\nmin: %f\nmxv: %02x %02x\n", mx, mi, mxv.X, mxv.Y); }
+    if *flagDebug { fmt.Printf("max: %f\nmin: %f\nmxv: %02x %02x\n", mx, mi, mxv.X, mxv.Y); }
 
     // normalization so everything will be from 0 to 255
     mx /= 255;  // one operation instead multiplying by 255 in loop
-    if *bn {
+    if *flagBn {
         mx -= mi/255;
         if mx == 0.0 { mx = 127; }
 
@@ -95,13 +98,11 @@ func main() {
         }
     }
 
-    if *igf {
-        img.Set(int(mxv.X), int(mxv.Y), color.RGBA{255, 0, 255, 255});
-    }
+    if *flagIgf { img.Set(int(mxv.X), int(mxv.Y), color.RGBA{255, 0, 255, 255}); }
 
-    file.Close();
     file, err = os.Create("out.png");
     if err != nil {
+        fmt.Fprintln(os.Stderr, "Failed to create output file");
         panic(err);
     }
     png.Encode(file, img);
