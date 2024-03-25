@@ -34,9 +34,15 @@ func main() {
         fmt.Fprintln(os.Stderr, "Failed to open file");
         panic(err);
     }
-    reader := bufio.NewReader(file);
 
-    if *flagDebug { fmt.Printf("reader size: %d\n", reader.Size()); }
+    stat, err := file.Stat();
+    if err != nil {
+        fmt.Fprintln(os.Stderr, "Failed to stat file");
+        panic(err);
+    }
+    if *flagDebug { fmt.Printf("input file size: %d\n", stat.Size()); }
+
+    reader := bufio.NewReader(file);
 
     var ar [256][256]float64;
 
