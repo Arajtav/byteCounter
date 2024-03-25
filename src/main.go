@@ -2,6 +2,9 @@ package main
 
 import (
     "os"
+    "os/signal"
+    "syscall"
+
     "bufio"
 
     "fmt"
@@ -46,11 +49,20 @@ func main() {
 
     var ar [256][256]float64;
 
+    signals := make(chan os.Signal, 1);
+    signal.Notify(signals, syscall.SIGINT, syscall.SIGTERM)
+
     // for every two bytes in file, use first on as X and second one as Y.
+    count := uint64(0);
     for {
+        if (len(signals) > 0) {
+            fmt.Printf("Program interrupted, %d bytes read\n", count*2);
+            break;
+        }
         x, err := reader.ReadByte(); if err != nil { break; }
         y, err := reader.ReadByte(); if err != nil { break; }
         ar[x][y] += 1.0;
+        count++;
     }
     file.Close();
 
