@@ -22,17 +22,18 @@ func main() {
     flagIgf     := flag.Bool("igf",     false, "Makes program ignore most occurring byte sequence when normalizing data. It will also replace pixel at that place to magenta");
     flag.Parse();
 
-    if len(flag.Args()) < 1 {
-        fmt.Fprintln(os.Stderr, "You need to specify input file");
-        os.Exit(1);
-    }
-
     if len(flag.Args()) > 1 {
         fmt.Fprintln(os.Stderr, "Too many arguments");
         os.Exit(1);
     }
 
-    file, err := os.Open(flag.Args()[0]);
+    var file *os.File;
+    var err error;
+    if len(flag.Args()) == 1 {
+        file, err = os.Open(flag.Args()[0]);
+    } else {
+        file = os.Stdin;
+    }
     if err != nil {
         fmt.Fprintln(os.Stderr, "Failed to open file");
         panic(err);
