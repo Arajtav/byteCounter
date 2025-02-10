@@ -41,11 +41,16 @@ func byteCounter(betterNormalization bool, ignoreMostFrequent bool, inputFileNam
 			count += 2
 		}
 	} else {
-		fmt.Println("irregular file")
+		if stat.Mode().IsDir() {
+			fmt.Fprintln(os.Stderr, "the file is a directory, skipping")
+			done <- 0
+			return
+		}
+		fmt.Fprintln(os.Stderr, "irregular file")
 		data := make([]byte, 4096)
 		for {
 			if len(signals) > 0 {
-				fmt.Printf("Program interrupted, %d bytes read\n", count)
+				fmt.Fprintf(os.Stderr, "Program interrupted, %d bytes read\n", count)
 				break
 			}
 			n, err := file.Read(data)
@@ -93,7 +98,7 @@ func byteCounter(betterNormalization bool, ignoreMostFrequent bool, inputFileNam
 		}
 	}
 
-	fmt.Printf("max: %f\nmin: %f\nmxv: %02x %02x\n", mx, mi, mxv.X, mxv.Y)
+	fmt.Fprintf(os.Stderr, "max: %f\nmin: %f\nmxv: %02x %02x\n", mx, mi, mxv.X, mxv.Y)
 	if ignoreMostFrequent {
 		mx = mx2
 	}
@@ -155,8 +160,10 @@ func main() {
 	signals = make(chan os.Signal, 1)
 	signal.Notify(signals, syscall.SIGINT, syscall.SIGTERM)
 	done = make(chan int, len(args))
+	filemap := ""
 	for i, fn := range args {
 		go byteCounter(*flagBetterNormalization, *flagIgnoreMostFrequent, fn, fmt.Sprintf("%s/%d.png", tmpd, i))
+		filemap = filemap + fmt.Sprintf("%d is %s\n", i, fn)
 	}
 	for len(done) != len(args) {
 	}
@@ -167,5 +174,6 @@ func main() {
 		}
 		total += <-done
 	}
-	fmt.Printf("total bytes read: %d, output files are in %s\n", total, tmpd)
+	fmt.Fprintf(os.Stderr, "total bytes read: %d, output files are in %s\n", total, tmpd)
+	fmt.Print(filemap)
 }
