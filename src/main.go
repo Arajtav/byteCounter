@@ -15,10 +15,10 @@ import (
 var done chan int
 var signals chan os.Signal
 
-func byteCounter(bn bool, igf bool, fn string, outfn string) {
+func byteCounter(betterNormalization bool, ignoreMostFrequent bool, inputFileName string, outputFileName string) {
 	var ar [256][256]float64
 	count := 0
-	file, err := os.Open(fn)
+	file, err := os.Open(inputFileName)
 	if err != nil {
 		panic(err)
 	}
@@ -28,7 +28,7 @@ func byteCounter(bn bool, igf bool, fn string, outfn string) {
 	}
 	if stat.Mode().IsRegular() {
 		file.Close()
-		data, err := os.ReadFile(fn)
+		data, err := os.ReadFile(inputFileName)
 		if err != nil {
 			panic(err)
 		}
@@ -83,23 +83,18 @@ func byteCounter(bn bool, igf bool, fn string, outfn string) {
 				mxv.Y = uint8(j)
 			} else if ar[i][j] > mx2 {
 				mx2 = ar[i][j]
-			}
-			if ar[i][j] < mi {
+			} else if ar[i][j] < mi {
 				mi = ar[i][j]
 			}
 		}
 	}
 
-	if igf {
-		ar[mxv.X][mxv.Y] = 0.0
+	fmt.Printf("max: %f\nmin: %f\nmxv: %02x %02x\n", mx, mi, mxv.X, mxv.Y)
+	if ignoreMostFrequent {
 		mx = mx2
 	}
-
-	fmt.Printf("max: %f\nmin: %f\nmxv: %02x %02x\n", mx, mi, mxv.X, mxv.Y)
-
-	// normalization so everything will be from 0 to 255
-	mx /= 255 // one operation instead multiplying by 255 in loop
-	if bn {
+	mx /= 255
+	if betterNormalization {
 		mx -= mi / 255
 		if mx == 0.0 {
 			mx = 127
@@ -126,11 +121,11 @@ func byteCounter(bn bool, igf bool, fn string, outfn string) {
 		}
 	}
 
-	if igf {
+	if ignoreMostFrequent {
 		img.Set(int(mxv.X), int(mxv.Y), color.RGBA{255, 0, 255, 255})
 	}
 
-	file, err = os.Create(outfn)
+	file, err = os.Create(outputFileName)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "Failed to create output file")
 		panic(err)
@@ -141,9 +136,9 @@ func byteCounter(bn bool, igf bool, fn string, outfn string) {
 }
 
 func main() {
-	flagBn := flag.Bool("bn", false, "If set to true, program will make contrast higher by subtracting minimal value from everything")
-	flagIgf := flag.Bool("igf", false, "Makes program ignore most occurring byte sequence when normalizing data. It will also replace pixel at that place to magenta")
-	flag.Parse() // TODO: currently it does not work when flags are after the input file
+	flagBetterNormalization := flag.Bool("b", false, "If set to true, program will make contrast higher by subtracting minimal value from everything")
+	flagIgnoreMostFrequent := flag.Bool("i", false, "Makes program ignore most occurring byte sequence when normalizing data. It will also replace pixel at that place to magenta")
+	flag.Parse() // TODO: gnu style flags
 
 	var args = flag.Args()
 	if len(args) == 0 {
@@ -157,7 +152,7 @@ func main() {
 	signal.Notify(signals, syscall.SIGINT, syscall.SIGTERM)
 	done = make(chan int, len(args))
 	for i, fn := range args {
-		go byteCounter(*flagBn, *flagIgf, fn, fmt.Sprintf("%s/%d.png", tmpd, i))
+		go byteCounter(*flagBetterNormalization, *flagIgnoreMostFrequent, fn, fmt.Sprintf("%s/%d.png", tmpd, i))
 	}
 	for len(done) != len(args) {
 	}
@@ -168,5 +163,5 @@ func main() {
 		}
 		total += <-done
 	}
-	fmt.Printf("total bytes read: %d\n", total)
+	fmt.Printf("total bytes read: %d, output files are in %s\n", total, tmpd)
 }
