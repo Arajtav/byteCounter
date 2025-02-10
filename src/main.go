@@ -6,6 +6,7 @@ import (
 	"image"
 	"image/color"
 	"image/png"
+	"io"
 	"math"
 	"os"
 	"os/signal"
@@ -49,7 +50,10 @@ func byteCounter(betterNormalization bool, ignoreMostFrequent bool, inputFileNam
 			}
 			n, err := file.Read(data)
 			if err != nil {
-				panic(err)
+				if err != io.EOF {
+					panic(err)
+				}
+				println("EOF")
 			}
 			if n == 0 {
 				break
