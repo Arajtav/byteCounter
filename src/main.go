@@ -12,23 +12,11 @@ import (
 	"syscall"
 )
 
-func main() {
-	flagBn := flag.Bool("bn", false, "If set to true, program will make contrast higher by subtracting minimal value from everything")
-	flagDebug := flag.Bool("debug", false, "Prints debug information")
-	flagIgf := flag.Bool("igf", false, "Makes program ignore most occurring byte sequence when normalizing data. It will also replace pixel at that place to magenta")
-	flag.Parse() // TODO: currently it does not work when flags are after the input file
+var done chan int
+var signals chan os.Signal
 
-	var args = flag.Args()
-	if len(args) > 1 {
-		fmt.Fprintln(os.Stderr, "Multiple input files are not suppoted yet.")
-		os.Exit(1)
-	}
-	fn := os.Stdin.Name()
-	if len(args) > 0 {
-		fn = args[0]
-	}
+func byteCounter(bn bool, igf bool, fn string, outfn string) {
 	var ar [256][256]float64
-
 	count := 0
 	file, err := os.Open(fn)
 	if err != nil {
@@ -38,15 +26,11 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-
 	if stat.Mode().IsRegular() {
 		file.Close()
 		data, err := os.ReadFile(fn)
 		if err != nil {
 			panic(err)
-		}
-		if *flagDebug {
-			fmt.Printf("input file size: %d\n", len(data))
 		}
 		for {
 			if count+2 > len(data) {
@@ -56,11 +40,7 @@ func main() {
 			count += 2
 		}
 	} else {
-		if *flagDebug {
-			fmt.Println("irregular file")
-		}
-		signals := make(chan os.Signal, 1)
-		signal.Notify(signals, syscall.SIGINT, syscall.SIGTERM)
+		fmt.Println("irregular file")
 		data := make([]byte, 4096)
 		for {
 			if len(signals) > 0 {
@@ -98,10 +78,11 @@ func main() {
 	for i := 0; i < 256; i++ {
 		for j := 0; j < 256; j++ {
 			if ar[i][j] > mx {
-				mx2 = mx
 				mx = ar[i][j]
 				mxv.X = uint8(i)
 				mxv.Y = uint8(j)
+			} else if ar[i][j] > mx2 {
+				mx2 = ar[i][j]
 			}
 			if ar[i][j] < mi {
 				mi = ar[i][j]
@@ -109,18 +90,16 @@ func main() {
 		}
 	}
 
-	if *flagIgf {
+	if igf {
 		ar[mxv.X][mxv.Y] = 0.0
 		mx = mx2
 	}
 
-	if *flagDebug {
-		fmt.Printf("max: %f\nmin: %f\nmxv: %02x %02x\n", mx, mi, mxv.X, mxv.Y)
-	}
+	fmt.Printf("max: %f\nmin: %f\nmxv: %02x %02x\n", mx, mi, mxv.X, mxv.Y)
 
 	// normalization so everything will be from 0 to 255
 	mx /= 255 // one operation instead multiplying by 255 in loop
-	if *flagBn {
+	if bn {
 		mx -= mi / 255
 		if mx == 0.0 {
 			mx = 127
@@ -147,15 +126,47 @@ func main() {
 		}
 	}
 
-	if *flagIgf {
+	if igf {
 		img.Set(int(mxv.X), int(mxv.Y), color.RGBA{255, 0, 255, 255})
 	}
 
-	file, err = os.Create("out.png")
+	file, err = os.Create(outfn)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "Failed to create output file")
 		panic(err)
 	}
 	png.Encode(file, img)
 	file.Close()
+	done <- count
+}
+
+func main() {
+	flagBn := flag.Bool("bn", false, "If set to true, program will make contrast higher by subtracting minimal value from everything")
+	flagIgf := flag.Bool("igf", false, "Makes program ignore most occurring byte sequence when normalizing data. It will also replace pixel at that place to magenta")
+	flag.Parse() // TODO: currently it does not work when flags are after the input file
+
+	var args = flag.Args()
+	if len(args) == 0 {
+		args = append(args, os.Stdin.Name())
+	}
+	tmpd, err := os.MkdirTemp(".", "out_")
+	if err != nil {
+		panic(err)
+	}
+	signals = make(chan os.Signal, 1)
+	signal.Notify(signals, syscall.SIGINT, syscall.SIGTERM)
+	done = make(chan int, len(args))
+	for i, fn := range args {
+		go byteCounter(*flagBn, *flagIgf, fn, fmt.Sprintf("%s/%d.png", tmpd, i))
+	}
+	for len(done) != len(args) {
+	}
+	total := 0
+	for {
+		if len(done) == 0 {
+			break
+		}
+		total += <-done
+	}
+	fmt.Printf("total bytes read: %d\n", total)
 }
