@@ -1,18 +1,12 @@
-# What is this project about
-This project is a simple program that will draw a number of occurrences of 2 bytes sequences in file, and save it to out.png.
-
-## How does it work?
-For each 2 bytes in file, program uses first one as X, and second as Y.
-Program increments value in 2d array at that place every time that sequence is scanned.
-On the end everything is normalized to use values from 0 to 255.
+For each 2 bytes in file, program uses first one as X, and second as Y, in 256x256 table value at position is incremented.
+After scanning the whole thing, everything is normalized and saved to a png.
 
 ## Usage
-There are 3 flags you can use:
-- `bn` - By default program uses ratio of value to the max value to determine brightness of the pixel. That means, if every sequence occurred 1000 times and one 1001 times, every pixel of output will look the same. With this flag minimal value (1000 in this example) will be subtracted from every value (so it will work like if every sequence occurred 0 times, and one 1 time).
-- `debug` - Prints debug information.
-- `igf` - Makes program ignore sequence that occurred most times (for example without this flag, in binary files that has a lot of null bytes, output will have only one bright pixel).
+There are 2 flags you can use:
+- `-b` - offset every value in the table by minimal value, before normalization.
+- `-i` - ignore most frequent byte sequence for normalization (replaces it with magenta pixel).
 
 ## notes
-Each time the program is run, it creates tmp `out_` directory, with `N.png` images for each processed input file.
+Each time the program is run, it creates temporary `out_` directory, with `N.png` images for each processed input file.
 Stdout has a map of which output files correspond to which input files.
 All logs are written to stderr.

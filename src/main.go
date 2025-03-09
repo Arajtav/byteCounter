@@ -84,8 +84,8 @@ func byteCounter(betterNormalization bool, ignoreMostFrequent bool, inputFileNam
 	mx2 := float64(0.0)
 	var mxv struct{ X, Y uint8 }
 	mi := math.MaxFloat64
-	for i := 0; i < 256; i++ {
-		for j := 0; j < 256; j++ {
+	for i := range 256 {
+		for j := range 256 {
 			if ar[i][j] > mx {
 				mx = ar[i][j]
 				mxv.X = uint8(i)
@@ -109,22 +109,22 @@ func byteCounter(betterNormalization bool, ignoreMostFrequent bool, inputFileNam
 			mx = 127
 		}
 
-		for i := 0; i < 256; i++ {
-			for j := 0; j < 256; j++ {
+		for i := range 256 {
+			for j := range 256 {
 				ar[i][j] = ((ar[i][j] - mi) / mx)
 			}
 		}
 	} else {
-		for i := 0; i < 256; i++ {
-			for j := 0; j < 256; j++ {
+		for i := range 256 {
+			for j := range 256 {
 				ar[i][j] = (ar[i][j] / mx)
 			}
 		}
 	}
 
 	img := image.NewRGBA(image.Rect(0, 0, 256, 256))
-	for i := 0; i < 256; i++ {
-		for j := 0; j < 256; j++ {
+	for i := range 256 {
+		for j := range 256 {
 			v := uint8(ar[i][j])
 			img.Set(i, j, color.RGBA{v, v, v, 255})
 		}
